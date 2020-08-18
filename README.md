@@ -1,5 +1,5 @@
 # Vamp Cloud Demo
-## Instructions for populating an application cluster
+## Instructions for Bootstrapping an Application Cluster
 These instructions populate a cluster using Prometheus Operator and the Envoy-based Project Contour Ingress
 #### Install Prometheus Operator
 This is a minimum install of the latest version (v0.41.1 at the time of writing):
@@ -22,3 +22,5 @@ This creates the  Prometheus configuration to scrape metrics from Envoy and the 
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/magneticio/vamp-cloud-demo/master/contour-service-monitor.yaml
 ```
+#### Run the Vamp Release Agent Installer
+You can now install the Vamp Release Agent for you application using the command shown on the application details tab in the Vamp Cloud UI.
