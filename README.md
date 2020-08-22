@@ -19,8 +19,8 @@ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
 
 You can find more details at [projectcontour.io](https://projectcontour.io/getting-started/).
 
-#### Create a *ServiceMonitor* for Contour
-This creates the  Prometheus configuration to scrape metrics from Envoy and the required ClusterRole, ClusterRoleBinding, and Service Account.
+#### Create a *PodMonitor* for Contour
+This creates the Prometheus configuration to scrape metrics from Envoy and the required ClusterRole, ClusterRoleBinding, and Service Account.
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/magneticio/vamp-cloud-demo/master/contour-pod-monitor.yaml
 ```
