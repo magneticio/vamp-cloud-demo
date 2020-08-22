@@ -75,6 +75,9 @@ spec:
   selector:
     matchLabels:
       app: envoy
+  namespaceSelector:
+    matchNames:
+    - projectcontour
   endpoints:
     - targetPort: 8002
       interval: 30s
