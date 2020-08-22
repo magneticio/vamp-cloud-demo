@@ -22,7 +22,7 @@ You can find more details at [projectcontour.io](https://projectcontour.io/getti
 #### Create a *ServiceMonitor* for Contour
 This creates the  Prometheus configuration to scrape metrics from Envoy and the required ClusterRole, ClusterRoleBinding, and Service Account.
 ```sh
-kubectl apply -f https://raw.githubusercontent.com/magneticio/vamp-cloud-demo/master/contour-service-monitor.yaml
+kubectl apply -f https://raw.githubusercontent.com/magneticio/vamp-cloud-demo/master/contour-pod-monitor.yaml
 ```
 #### Run the Vamp Release Agent Installer
 You can now install the Vamp Release Agent for you application using the command shown on the application details tab in the Vamp Cloud UI.
