@@ -78,7 +78,7 @@ spec:
   namespaceSelector:
     matchNames:
     - projectcontour
-  endpoints:
+  podMetricsEndpoints:
     - targetPort: 8002
       interval: 10s
       path: /stats/prometheus
