@@ -1,0 +1,100 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: particles-v1.0.0
+  labels:
+    app: particles
+    version: 1.0.0
+spec:
+  selector:
+    matchLabels:
+      app: particles
+      version: 1.0.0
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: particles
+        version: 1.0.0
+    spec:
+      containers:
+      - name: particles
+        image: magneticio/particles:1.4.10
+        imagePullPolicy: Always
+        args:
+          - "--color=#F0F5FA"
+          - "--appVersion=v1.0.0"
+          - "--showStats"
+          - "--clusterCount=50"
+          - "--particlesPerCluster=10"
+          - "--minMem=300"
+        env:
+        - name: MEM_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: particles
+              resource: limits.memory
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: demo-autoscaler
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: demo-autoscaler
+subjects:
+- kind: ServiceAccount
+  name: demo-autoscaler
+  namespace: particles
+roleRef:
+  kind: ClusterRole
+  name: demo-autoscaler
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+ name: autoscaler-particles-v1.0.0
+spec:
+  template:
+    metadata:
+      name: autoscaler-particles-v1.0.0
+    spec:
+      containers:
+      - name: autoscaler
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: DEPLOYMENT_NAME
+          value: particles-v1.0.0
+        - name: DEPLOYMENT_LABELS
+          value: app=particles,version=1.0.0
+        - name: MIN_REPLICAS
+          value: "2"
+        - name: MAX_REPLICAS
+          value: "4"
+        image: magneticio/particles-autoscaler:0.1.23
+      restartPolicy: OnFailure
+      serviceAccountName: demo-autoscaler
