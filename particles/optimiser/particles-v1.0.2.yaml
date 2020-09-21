@@ -47,11 +47,11 @@ spec:
           failureThreshold: 1
         resources:
           limits:
-            cpu: 825m
-            memory: 333Mi
+            cpu: "0.809"
+            memory: "807.986Mi"
           requests:
-            cpu: 402m
-            memory: 46Mi
+            cpu: "0.139"
+            memory: "514.369Mi"
 ---
 apiVersion: batch/v1
 kind: Job
