@@ -1,0 +1,54 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: particles-v1.0.0
+  namespace: preprod
+  labels:
+    app: particles
+    version: 1.0.0
+spec:
+  selector:
+    matchLabels:
+      app: particles
+      version: 1.0.0
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: particles
+        version: 1.0.0
+    spec:
+      containers:
+      - name: particles
+        image: magneticio/particles:1.4.10
+        imagePullPolicy: Always
+        args:
+          - "--color=#F0F5FA"
+          - "--appVersion=v1.0.0"
+          - "--showStats"
+          - "--clusterCount=50"
+          - "--particlesPerCluster=10"
+          - "--minMem=300"
+        env:
+        - name: MEM_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: particles
+              resource: limits.memory
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
