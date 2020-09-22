@@ -29,7 +29,7 @@ spec:
           - "--clusterCount=50"
           - "--particlesPerCluster=10"
           - "--minMem=300"
-          - "--checkResourceDelay=240"
+          - "--checkResourceDelay=185"
         env:
         - name: MEM_LIMIT
           valueFrom:
