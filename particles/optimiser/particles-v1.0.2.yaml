@@ -23,8 +23,8 @@ spec:
         image: magneticio/particles:1.4.10
         imagePullPolicy: Always
         args:
-          - "--color=#F0F5FA"
-          - "--appVersion=v1.0.1"
+          - "--color=#FF0000"
+          - "--appVersion=v1.0.2"
           - "--showStats"
           - "--clusterCount=50"
           - "--particlesPerCluster=10"
