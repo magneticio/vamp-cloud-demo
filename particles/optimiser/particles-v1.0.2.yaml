@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: particles
-        image: magneticio/particles:1.4.10
+        image: magneticio/particles:1.4.21
         imagePullPolicy: Always
         args:
           - "--color=#FF0000"
@@ -29,7 +29,8 @@ spec:
           - "--clusterCount=50"
           - "--particlesPerCluster=10"
           - "--minMem=300"
-          - "--checkResourceDelay=240"
+          - "--healthCheckGracePeriodSeconds=125"
+          - "--resourceCheckGracePeriodSeconds=60"
         env:
         - name: MEM_LIMIT
           valueFrom:
