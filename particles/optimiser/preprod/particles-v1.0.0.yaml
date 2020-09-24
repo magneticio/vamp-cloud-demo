@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: particles
-        image: magneticio/particles:1.4.21
+        image: magneticio/particles:1.4.22
         imagePullPolicy: Always
         args:
           - "--color=#F0F5FA"
