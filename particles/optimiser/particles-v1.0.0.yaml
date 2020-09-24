@@ -35,6 +35,7 @@ spec:
           valueFrom:
             resourceFieldRef:
               containerName: particles
+              divisor: 1Mi
               resource: limits.memory
         ports:
         - containerPort: 5000
