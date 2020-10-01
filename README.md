@@ -1,6 +1,6 @@
 # Vamp Cloud Demo
 ## Instructions for Bootstrapping an Application Cluster
-These instructions populate a cluster using Prometheus Operator and the Envoy-based Project Contour Ingress.
+These instructions populate a cluster with Prometheus and the Envoy-based Project Contour Ingress.
 
 If you need to create to a Kubernetes cluster, you can follow these instructions to setup a suitable cluster on Google Cloud
 ```sh
