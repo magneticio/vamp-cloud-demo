@@ -54,25 +54,6 @@ spec:
             cpu: 100m
             memory: 64Mi
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: demo-autoscaler
-  namespace: production
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: demo-autoscaler
-subjects:
-- kind: ServiceAccount
-  name: demo-autoscaler
-  namespace: production
-roleRef:
-  kind: ClusterRole
-  name: demo-autoscaler
-  apiGroup: rbac.authorization.k8s.io
----
 apiVersion: batch/v1
 kind: Job
 metadata:

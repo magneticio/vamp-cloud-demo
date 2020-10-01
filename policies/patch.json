@@ -1,0 +1,200 @@
+{
+  "type": "release",
+  "name": "patch",
+  "steps": [
+    {
+      "name": "First step",
+      "source": {
+        "weight": 80
+      },
+      "target": {
+        "weight": 20
+      },
+      "endAfter": {
+        "value": "duration == baselines.maxDuration"
+      },
+      "segmentation": [
+        {
+          "name": "20% of all traffic"
+        }
+      ],
+      "conditions": [
+        {
+          "name": "availability",
+          "value": "availability >= baselines.minAvailability",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "restarts",
+          "value": "restarts < baselines.maxRestarts",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "requests",
+          "value": "requests >= 0",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "successRate",
+          "value": "successRate >= baselines.minSuccessRate",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "health",
+          "value": "health >= baselines.minHealth",
+          "gracePeriod": "1m"
+        }
+      ]
+    },
+    {
+      "name": "Second step",
+      "source": {
+        "weight": 50
+      },
+      "target": {
+        "weight": 50
+      },
+      "endAfter": {
+        "value": "duration == baselines.maxDuration"
+      },
+      "segmentation": [
+        {
+          "name": "50% of all traffic"
+        }
+      ],
+      "conditions": [
+        {
+          "name": "availability",
+          "value": "availability >= baselines.minAvailability",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "restarts",
+          "value": "restarts < baselines.maxRestarts",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "requests",
+          "value": "requests >= 0",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "successRate",
+          "value": "successRate >= baselines.minSuccessRate",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "health",
+          "value": "health >= baselines.minHealth",
+          "gracePeriod": "1m"
+        }
+      ]
+    },
+    {
+      "name": "Last step",
+      "source": {
+        "weight": 20
+      },
+      "target": {
+        "weight": 80
+      },
+      "endAfter": {
+        "value": "duration == baselines.maxDuration"
+      },
+      "segmentation": [
+        {
+          "name": "80% of all traffic"
+        }
+      ],
+      "conditions": [
+        {
+          "name": "availability",
+          "value": "availability >= baselines.minAvailability",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "restarts",
+          "value": "restarts < baselines.maxRestarts",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "requests",
+          "value": "requests >= 0",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "successRate",
+          "value": "successRate >= baselines.minSuccessRate",
+          "gracePeriod": "1m"
+        },
+        {
+          "name": "health",
+          "value": "health >= baselines.minHealth",
+          "gracePeriod": "1m"
+        }
+      ]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "availability",
+      "value": {
+        "source": "k8s-deployment-health",
+        "type": "AvailableReplicas"
+      }
+    },
+    {
+      "name": "restarts",
+      "value": {
+        "source": "k8s-deployment-health",
+        "type": "Restarts"
+      }
+    },
+    {
+      "name": "requests",
+      "value": {
+        "source": "ingress",
+        "type": "RequestsPerSecond"
+      }
+    },
+    {
+      "name": "successRate",
+      "value": {
+        "source": "k8s-deployment-health",
+        "type": "SuccessRate"
+      }
+    },
+    {
+      "name": "health",
+      "value": {
+        "source": "k8s-deployment-health"
+      }
+    }
+  ],
+  "baselines": [
+    {
+      "name": "minAvailability",
+      "metric": "availability",
+      "value": 1
+    },
+    {
+      "name": "maxRestarts",
+      "metric": "restarts",
+      "value": 1
+    },
+    {
+      "name": "minSuccessRate",
+      "metric": "successRate",
+      "value": 70
+    },
+    {
+      "name": "minHealth",
+      "metric": "health",
+      "value": 0.97
+    },
+    {
+      "name": "maxDuration",
+      "value": "2m"
+    }
+  ]
+}

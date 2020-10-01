@@ -1,7 +1,9 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: particles-v1.0.0
+  namespace: particles
   labels:
     app: particles
     version: 1.0.0
@@ -10,7 +12,7 @@ spec:
     matchLabels:
       app: particles
       version: 1.0.0
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
@@ -19,7 +21,7 @@ spec:
     spec:
       containers:
       - name: particles
-        image: magneticio/particles
+        image: magneticio/particles:1.4.22
         imagePullPolicy: Always
         args:
           - "--color=#F0F5FA"
@@ -27,10 +29,57 @@ spec:
           - "--showStats"
           - "--clusterCount=50"
           - "--particlesPerCluster=10"
+          - "--minMem=300"
+        env:
+        - name: MEM_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: particles
+              divisor: 1Mi
+              resource: limits.memory
         ports:
         - containerPort: 5000
+          name: http
           protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
         resources:
+          limits:
+            cpu: 100m
+            memory: 320Mi
           requests:
-            cpu: 0.1
-            memory: 256
+            cpu: 50m
+            memory: 64Mi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: autoscaler-particles-v1.0.0
+  namespace: particles
+spec:
+  template:
+    metadata:
+      name: autoscaler-particles-v1.0.0
+    spec:
+      containers:
+      - name: autoscaler
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: DEPLOYMENT_NAME
+          value: particles-v1.0.0
+        - name: DEPLOYMENT_LABELS
+          value: app=particles,version=1.0.0
+        - name: MIN_REPLICAS
+          value: "2"
+        - name: MAX_REPLICAS
+          value: "4"
+        image: magneticio/particles-autoscaler:0.1.23
+      restartPolicy: OnFailure
+      serviceAccountName: demo-autoscaler

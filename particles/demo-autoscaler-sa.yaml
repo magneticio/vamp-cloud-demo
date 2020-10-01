@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: demo-autoscaler
+  namespace: particles
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: demo-autoscaler
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/scale"]
+  verbs: ["get", "patch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: demo-autoscaler
+subjects:
+- kind: ServiceAccount
+  name: demo-autoscaler
+  namespace: particles
+roleRef:
+  kind: ClusterRole
+  name: demo-autoscaler
+  apiGroup: rbac.authorization.k8s.io
