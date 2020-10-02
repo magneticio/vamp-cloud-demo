@@ -17,5 +17,11 @@ This will install Prometheus and the latest version of Contour:
 
 You can find more details at [projectcontour.io](https://projectcontour.io/getting-started/).
 
+#### Configure external-dns
+These instructions assume that you have [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity) configured
+```sh
+./external-dns.sh <gcloud-project-id> <gcloud-service-account>
+```
+
 #### Run the Vamp Release Agent Installer
 You can now install the Vamp Release Agent for you application using the command shown on the application details tab in the Vamp Cloud UI.
