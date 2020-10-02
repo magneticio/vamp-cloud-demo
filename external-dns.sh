@@ -3,7 +3,7 @@
 PROJECT_ID=$1
 GCLOUD_SA=$2
 
-cat <<EOM
+kubectl apply -f <<EOM
 apiVersion: v1
 kind: ServiceAccount
 metadata:
