@@ -175,7 +175,7 @@
     {
       "name": "minAvailability",
       "metric": "availability",
-      "value": 1
+      "value": 2
     },
     {
       "name": "maxRestarts",

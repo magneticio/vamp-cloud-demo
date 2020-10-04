@@ -23,37 +23,37 @@
         {
           "name": "availability",
           "value": "availability >= baselines.minAvailability",
-          "gracePeriod": "1m30s"
+          "gracePeriod": "1m"
         },
         {
           "name": "restarts",
           "value": "restarts <= baselines.maxRestarts",
-          "gracePeriod": "1m30s"
+          "gracePeriod": "1m"
         },
         {
           "name": "requests",
           "value": "requests >= 0",
-          "gracePeriod": "1m30s"
+          "gracePeriod": "1m"
         },
         {
           "name": "successRate",
           "value": "successRate >= baselines.minSuccessRate",
-          "gracePeriod": "1m30s"
+          "gracePeriod": "1m"
         },
         {
           "name": "health",
           "value": "health >= baselines.minHealth",
-          "gracePeriod": "1m30s"
+          "gracePeriod": "1m"
         }
       ]
     },
     {
       "name": "Second step",
       "source": {
-        "weight": 50
+        "weight": 80
       },
       "target": {
-        "weight": 50,
+        "weight": 20,
         "condition": "header: user-agent contains Chrome"
       },
       "endAfter": {
@@ -61,7 +61,7 @@
       },
       "segmentation": [
         {
-          "name": "All Chrome users plus 50% of other user"
+          "name": "All Chrome users plus 20% of all other traffic"
         }
       ],
       "conditions": [
@@ -72,7 +72,7 @@
         },
         {
           "name": "restarts",
-          "value": "restarts <= baselines.maxRestarts",
+          "value": "restarts < baselines.maxRestarts",
           "gracePeriod": "1m"
         },
         {
@@ -95,10 +95,10 @@
     {
       "name": "Third step",
       "source": {
-        "weight": 20
+        "weight": 50
       },
       "target": {
-        "weight": 80,
+        "weight": 50,
         "condition": "header: user-agent contains Chrome"
       },
       "endAfter": {
@@ -106,7 +106,7 @@
       },
       "segmentation": [
         {
-          "name": "All Chrome users plus 80% of other user"
+          "name": "All Chrome users plus 50% of all other traffic"
         }
       ],
       "conditions": [
@@ -117,7 +117,7 @@
         },
         {
           "name": "restarts",
-          "value": "restarts <= baselines.maxRestarts",
+          "value": "restarts < baselines.maxRestarts",
           "gracePeriod": "1m"
         },
         {
@@ -140,17 +140,18 @@
     {
       "name": "Last step",
       "source": {
-        "weight": 0
+        "weight": 20
       },
       "target": {
-        "weight": 100
+        "weight": 80,
+        "condition": "header: user-agent contains Chrome"
       },
       "endAfter": {
         "value": "duration == baselines.maxDuration"
       },
       "segmentation": [
         {
-          "name": "All users"
+          "name": "All Chrome users plus 80% of all other traffic"
         }
       ],
       "conditions": [
@@ -161,7 +162,7 @@
         },
         {
           "name": "restarts",
-          "value": "restarts <= baselines.maxRestarts",
+          "value": "restarts < baselines.maxRestarts",
           "gracePeriod": "1m"
         },
         {
@@ -222,12 +223,12 @@
     {
       "name": "minAvailability",
       "metric": "availability",
-      "value": 1
+      "value": 2
     },
     {
       "name": "maxRestarts",
       "metric": "restarts",
-      "value": 10
+      "value": 1
     },
     {
       "name": "minSuccessRate",
@@ -241,7 +242,7 @@
     },
     {
       "name": "maxDuration",
-      "value": "3m"
+      "value": "2m"
     }
   ]
 }

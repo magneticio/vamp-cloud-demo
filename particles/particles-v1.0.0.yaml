@@ -12,7 +12,7 @@ spec:
     matchLabels:
       app: particles
       version: 1.0.0
-  replicas: 2
+  replicas: 4
   template:
     metadata:
       labels:
@@ -46,6 +46,7 @@ spec:
             path: /health
             port: http
             scheme: HTTP
+          failureThreshold: 1
         resources:
           limits:
             cpu: 100m
@@ -80,6 +81,8 @@ spec:
           value: "2"
         - name: MAX_REPLICAS
           value: "4"
-        image: magneticio/particles-autoscaler:0.1.23
+        - name: INITIAL_DELAY
+          value: "60"
+        image: magneticio/particles-autoscaler:0.1.24
       restartPolicy: OnFailure
       serviceAccountName: demo-autoscaler
