@@ -15,8 +15,8 @@ gcloud beta container clusters create "$CLUSTER_NAME" \
   --image-type "COS" \
   --disk-type "pd-standard" \
   --disk-size "20" \
-  --num-nodes "1" \
-  --enable-autoscaling --min-nodes "1" --max-nodes "3" \
+  --num-nodes "2" \
+  --enable-autoscaling --min-nodes "2" --max-nodes "3" \
   --enable-shielded-nodes \
   --default-max-pods-per-node "110" \
   --max-pods-per-node "110" \
