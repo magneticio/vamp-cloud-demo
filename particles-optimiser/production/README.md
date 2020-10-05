@@ -6,10 +6,8 @@ The following script creates the Demo Autoscaler Service Account and deploys ver
 ./start.sh
 ```
 
-### Open Two Browser Windows, One in Chrome
-Before continuing:
-1. Open http://production.demo.vamp-dev.cloud/ in Chrome
-1. Open http://production.demo.vamp-dev.cloud/ in a different browser, for example Firefox
+### Open Particles in Your Browser
+Before continuing, open http://production.demo.vamp-dev.cloud/ in your favourite browser
 
 ### Deploy Version 1.0.1
 The release of this version should fail in the second step

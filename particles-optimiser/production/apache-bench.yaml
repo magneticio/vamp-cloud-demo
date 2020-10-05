@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apache-bench
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: apache-bench
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: apache-bench
+    spec:
+      containers:
+        - name: apache-bench
+          image: jordi/ab
+          args:
+          - "-c"
+          - "8"
+          - "-n"
+          - "1000000"
+          - "-H"
+          - "Host: production.demo.vamp-dev.cloud"
+          - "http://envoy.projectcontour/particles"
