@@ -10,7 +10,6 @@ set -e
 gcloud beta container clusters create "$CLUSTER_NAME" \
   --project "$PROJECT_ID" \
   --region "$REGION" \
-  --cluster-version "1.17.9-gke.1504" \
   --release-channel "regular" \
   --machine-type "n2-custom-2-4096" \
   --image-type "COS" \
