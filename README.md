@@ -6,6 +6,7 @@ If you need to create to a Kubernetes cluster, you can follow these instructions
 ```sh
 ./create-cluster-gke.sh <cluster-name> <gcloud-project-id> <region>
 ```
+_**Note: this script uses the** `n2-custom-2-4096` **custom machine type, which is not available in some regions**_ 
 
 Alternatively, you can use these instructions to setup a suitable cluster on [AWS](https://github.com/magneticio/vamp-cloud-demo/blob/master/create-k8s-cluster.md#amazon-kubernetes-service) or [Digital Ocean](https://github.com/magneticio/vamp-cloud-demo/blob/master/create-k8s-cluster.md#digital-ocean).
 
