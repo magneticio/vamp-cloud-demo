@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: apache-bench
   namespace: production
+  annotations:
+    vamp.io/release: "false"
 spec:
   selector:
     matchLabels:
