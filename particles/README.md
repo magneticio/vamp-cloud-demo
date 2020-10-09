@@ -11,7 +11,8 @@ Before continuing:
 1. Open http://particles.demo.vamp-dev.cloud/ in Chrome
 1. Open http://particles.demo.vamp-dev.cloud/ in a different browser, for example Firefox
 
-### Deploy Version 1.0.1
+### Deploy Version 1.0.1 (Optional)
+This version can be skipped in order to shorten the demo
 The release of this version should use be successful
 ```sh
 kubectl apply -f particles-v1.0.1.yaml
