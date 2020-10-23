@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # install contour ingress
-kubectl apply -f https://projectcontour.io/quickstart/contour.yaml && \
+kubectl apply -f contour/contour.yaml && \
   kubectl rollout status deployments/contour --timeout=300s --namespace=projectcontour
 
 
