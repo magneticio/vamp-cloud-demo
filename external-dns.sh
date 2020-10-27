@@ -70,7 +70,8 @@ spec:
             - --policy=upsert-only
             - --google-project=$PROJECT_ID
             - --registry=txt
-            - --txt-owner-id=my-identifier
+            - --txt-owner-id=vamp-cloud-demo
+            - --log-level=debug
           image: k8s.gcr.io/external-dns/external-dns:v0.7.4
           name: external-dns
       securityContext:
