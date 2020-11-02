@@ -1,5 +1,7 @@
 #!/bin/sh -e
 
+./external-dns-shim-ingress.sh
+
 HOST=${1:-production.demo.vamp-dev.cloud}
 
 kubectl apply -f demo-autoscaler-sa.yaml
