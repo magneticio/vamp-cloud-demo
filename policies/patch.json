@@ -1,6 +1,7 @@
 {
   "type": "release",
   "name": "patch",
+  "version": 2,
   "steps": [
     {
       "name": "First step",
