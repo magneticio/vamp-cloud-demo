@@ -5,7 +5,7 @@ envoy_lb_addr=$(kubectl get service envoy --namespace=projectcontour -o=jsonpath
 
 cat <<EOM | kubectl apply -f -
 apiVersion: vamp.io/v1
-kind: IngressShim
+kind: IngressAnnotations
 metadata:
   name: external-dns-shim
   namespace: production
