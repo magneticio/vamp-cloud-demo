@@ -12,7 +12,7 @@ spec:
     matchLabels:
       app: particles
       version: 1.0.0
-  replicas: 4
+  replicas: 2
   template:
     metadata:
       labels:
@@ -25,7 +25,7 @@ spec:
         imagePullPolicy: Always
         args:
           - "--color=#F0F5FA"
-          - "--appVersion=v1.0.0"
+          - "--appVersion=1.0.0"
           - "--showStats"
           - "--clusterCount=50"
           - "--particlesPerCluster=10"
@@ -54,35 +54,3 @@ spec:
           requests:
             cpu: 50m
             memory: 64Mi
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: autoscaler-particles-v1.0.0
-  namespace: particles
-spec:
-  template:
-    metadata:
-      name: autoscaler-particles-v1.0.0
-    spec:
-      containers:
-      - name: autoscaler
-        env:
-        - name: NAMESPACE
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-        - name: DEPLOYMENT_NAME
-          value: particles-v1.0.0
-        - name: DEPLOYMENT_LABELS
-          value: app=particles,version=1.0.0
-        - name: MIN_REPLICAS
-          value: "2"
-        - name: MAX_REPLICAS
-          value: "4"
-        - name: INITIAL_DELAY
-          value: "60"
-        image: magneticio/particles-autoscaler:0.1.24
-      restartPolicy: OnFailure
-      serviceAccountName: demo-autoscaler
