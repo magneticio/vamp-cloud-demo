@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: particles-v1.0.0
-  namespace: particles
+  namespace: production
   labels:
     app: particles
     version: 1.0.0
