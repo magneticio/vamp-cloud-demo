@@ -1,0 +1,756 @@
+# This file is generated from Contour v1.11.0.
+#
+# Generated from:
+#       examples/prometheus/01-namespace.yaml
+#       examples/prometheus/02-prometheus-alertmanager-configmap.yaml
+#       examples/prometheus/02-prometheus-alertrules-configmap.yaml
+#       examples/prometheus/02-prometheus-configmap.yaml
+#       examples/prometheus/03-prometheus-alertmanager-deployment.yaml
+#       examples/prometheus/03-prometheus-deployment.yaml
+#       examples/prometheus/03-prometheus-node-exporter.yaml
+#
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: projectcontour-monitoring
+  labels:
+    app: projectcontour-monitoring
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alertmanager
+  namespace: projectcontour-monitoring
+data:
+  alertmanager.yml: |-
+    global:
+
+    ##
+    # tool to help visualize where your alerts are going
+    # https://prometheus.io/webtools/alerting/routing-tree-editor/
+    ##
+
+    # The directory from which notification templates are read.
+    templates:
+    - '/etc/alertmanager/templates/*.tmpl'
+
+    # The root route on which each incoming alert enters.
+    route:
+      # The labels by which incoming alerts are grouped together. For example,
+      # multiple alerts coming in for cluster=A and alertname=LatencyHigh would
+      # be batched into a single group.
+      group_by: ['alertname', 'cluster', 'service']
+
+      # When a new group of alerts is created by an incoming alert, wait at
+      # least 'group_wait' to send the initial notification.
+      # This way ensures that you get multiple alerts for the same group that start
+      # firing shortly after another are batched together on the first
+      # notification.
+      group_wait: 30s
+
+      # When the first notification was sent, wait 'group_interval' to send a batch
+      # of new alerts that started firing for that group.
+      group_interval: 5m
+
+      # If an alert has successfully been sent, wait 'repeat_interval' to
+      # resend them.
+      repeat_interval: 3h
+
+      # A default receiver
+      receiver: default-receiver
+
+      # All the above attributes are inherited by all child routes and can
+      # overwritten on each.
+
+      # The child route trees.
+      routes:
+      # This routes performs a regular expression match on alert labels to
+      # catch alerts that are related to a list of services.
+      # - match_re:
+      #     service: ^(foo1|foo2|baz)$
+      #   receiver: team-X-mails
+      #   # The service has a sub-route for critical alerts, any alerts
+      #   # that do not match, i.e. severity != critical, fall-back to the
+      #   # parent node and are sent to 'team-X-mails'
+      #   routes:
+      #   - match:
+      #       severity: critical
+      #     receiver: team-X-pager
+      # - match:
+      #     severity: critical
+      #     receiver: critical_alert
+
+      # - match: 
+      #     severity: warning
+      #     receiver: slack_prometheus
+
+    # Inhibition rules allow to mute a set of alerts given that another alert is
+    # firing.
+    # We use this to mute any warning-level notifications if the same alert is
+    # already critical.
+    inhibit_rules:
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      # Apply inhibition if the alertname is the same.
+      equal: ['cluster', 'service']
+
+
+    receivers:
+    - name: default-receiver
+    # # receivers for critical alerts. For example Sends to pager duty _and_ slack
+    # - name: critical_alert
+    #   pagerduty_configs:
+    #    - send_resolved:  true
+    #      service_key: '<your service key>'
+
+    #   slack_configs:
+    #     - send_resolved: true
+    #       api_url: '<your slack api url>'
+    #       channel: '#<your channel name>'
+    #       text: '{{ template "slack.default.text" . }}'
+    #       title: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+
+    # # send to a slack channel. This is being used by the warning severity
+    # - name: 'slack_prometheus'
+    #   slack_configs:
+    #     - send_resolved: true
+    #       api_url: '<your slack api url>'
+    #       channel: '#<your channel name>'
+    #       title: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+    #       text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alert-rules
+  namespace: projectcontour-monitoring
+data:
+  alert.rules: |-
+    groups:
+    # This alert can be enabled to test the Alerting pipeline.
+    - name: allrules
+      rules:
+      - alert: DeadMansSwitch
+        expr: vector(1)
+        labels:
+          severity: deadman
+        annotations:
+          description: This is a Dead Man's Switch alert meant to ensure that the Alerting pipeline is functional.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus
+  namespace: projectcontour-monitoring
+data:
+  prometheus.yml: |-
+    # A scrape configuration for running Prometheus on a Kubernetes cluster.
+    # This uses separate scrape configs for cluster components (i.e. API server, node)
+    # and services to allow each to use different authentication configs.
+    #
+    # Kubernetes labels will be added as Prometheus labels on metrics via the
+    # `labelmap` relabeling action.
+    #
+    # If you are using Kubernetes 1.7.2 or earlier, please take note of the comments
+    # for the kubernetes-cadvisor job; you will need to edit or remove this job.
+
+    rule_files:
+    - '/etc/prometheus-rules/*.rules'
+    
+    # Scrape config for API servers.
+    #
+    # Kubernetes exposes API servers as endpoints to the default/kubernetes
+    # service so this uses `endpoints` role and uses relabelling to only keep
+    # the endpoints associated with the default/kubernetes service using the
+    # default named port `https`. This works for single API server deployments as
+    # well as HA API server deployments.
+    scrape_configs:
+    - job_name: 'kubernetes-apiservers'
+      scrape_interval: 30s
+
+      kubernetes_sd_configs:
+      - role: endpoints
+
+      # Default to scraping over https. If required, just disable this or change to
+      # `http`.
+      scheme: https
+
+      # This TLS & bearer token file config is used to connect to the actual scrape
+      # endpoints for cluster components. This is separate to discovery auth
+      # configuration because discovery & scraping are two separate concerns in
+      # Prometheus. The discovery auth config is automatic if Prometheus runs inside
+      # the cluster. Otherwise, more config options have to be provided within the
+      # <kubernetes_sd_config>.
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        # If your node certificates are self-signed or use a different CA to the
+        # master CA, then disable certificate verification below. Note that
+        # certificate verification is an integral part of a secure infrastructure
+        # so this should only be disabled in a controlled environment. You can
+        # disable certificate verification by uncommenting the line below.
+        #
+        # insecure_skip_verify: true
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+      # Keep only the default/kubernetes service endpoints for the https port. This
+      # will add targets for each API server which Kubernetes adds an endpoint to
+      # the default/kubernetes service.
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: default;kubernetes;https
+
+    # Scrape config for nodes (kubelet).
+    #
+    # Rather than connecting directly to the node, the scrape is proxied though the
+    # Kubernetes apiserver.  This means it will work if Prometheus is running out of
+    # cluster, or can't connect to nodes for some other reason (e.g. because of
+    # firewalling).
+    - job_name: 'kubernetes-nodes'
+      scrape_interval: 30s
+
+      # Default to scraping over https. If required, just disable this or change to
+      # `http`.
+      scheme: https
+
+      # This TLS & bearer token file config is used to connect to the actual scrape
+      # endpoints for cluster components. This is separate to discovery auth
+      # configuration because discovery & scraping are two separate concerns in
+      # Prometheus. The discovery auth config is automatic if Prometheus runs inside
+      # the cluster. Otherwise, more config options have to be provided within the
+      # <kubernetes_sd_config>.
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+      kubernetes_sd_configs:
+      - role: node
+
+      relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics
+
+    # Scrape config for Kubelet cAdvisor.
+    #
+    # This is required for Kubernetes 1.7.3 and later, where cAdvisor metrics
+    # (those whose names begin with 'container_') have been removed from the
+    # Kubelet metrics endpoint.  This job scrapes the cAdvisor endpoint to
+    # retrieve those metrics.
+    #
+    # In Kubernetes 1.7.0-1.7.2, these metrics are only exposed on the cAdvisor
+    # HTTP endpoint; use "replacement: /api/v1/nodes/${1}:4194/proxy/metrics"
+    # in that case (and ensure cAdvisor's HTTP server hasn't been disabled with
+    # the --cadvisor-port=0 Kubelet flag).
+    #
+    # This job is not necessary and should be removed in Kubernetes 1.6 and
+    # earlier versions, or it will cause the metrics to be scraped twice.
+    - job_name: 'kubernetes-cadvisor'
+      scrape_interval: 30s
+
+      # Default to scraping over https. If required, just disable this or change to
+      # `http`.
+      scheme: https
+
+      # This TLS & bearer token file config is used to connect to the actual scrape
+      # endpoints for cluster components. This is separate to discovery auth
+      # configuration because discovery & scraping are two separate concerns in
+      # Prometheus. The discovery auth config is automatic if Prometheus runs inside
+      # the cluster. Otherwise, more config options have to be provided within the
+      # <kubernetes_sd_config>.
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+      kubernetes_sd_configs:
+      - role: node
+
+      relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+
+    # Scrape config for service endpoints.
+    #
+    # The relabeling allows the actual service scrape endpoint to be configured
+    # via the following annotations:
+    #
+    # * `prometheus.io/scrape`: Only scrape services that have a value of `true`
+    # * `prometheus.io/scheme`: If the metrics endpoint is secured then you will need
+    # to set this to `https` & most likely set the `tls_config` of the scrape config.
+    # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
+    # * `prometheus.io/port`: If the metrics are exposed on a different port to the
+    # service then set this appropriately.
+    - job_name: 'kubernetes-service-endpoints'
+      scrape_interval: 30s
+
+      kubernetes_sd_configs:
+      - role: endpoints
+
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+        action: replace
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_service_name]
+        action: replace
+        target_label: kubernetes_name
+
+    # Example scrape config for probing services via the Blackbox Exporter.
+    #
+    # The relabeling allows the actual service scrape endpoint to be configured
+    # via the following annotations:
+    #
+    # * `prometheus.io/probe`: Only probe services that have a value of `true`
+    - job_name: 'kubernetes-services'
+      scrape_interval: 30s
+
+      metrics_path: /probe
+      params:
+        module: [http_2xx]
+
+      kubernetes_sd_configs:
+      - role: service
+
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]
+        action: keep
+        regex: true
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox-exporter.example.com:9115
+      - source_labels: [__param_target]
+        target_label: instance
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_service_name]
+        target_label: kubernetes_name
+
+    # Example scrape config for probing ingresses via the Blackbox Exporter.
+    #
+    # The relabeling allows the actual ingress scrape endpoint to be configured
+    # via the following annotations:
+    #
+    # * `prometheus.io/probe`: Only probe services that have a value of `true`
+    - job_name: 'kubernetes-ingresses'
+      scrape_interval: 30s
+
+      metrics_path: /probe
+      params:
+        module: [http_2xx]
+
+      kubernetes_sd_configs:
+        - role: ingress
+
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_ingress_scheme,__address__,__meta_kubernetes_ingress_path]
+          regex: (.+);(.+);(.+)
+          replacement: ${1}://${2}${3}
+          target_label: __param_target
+        - target_label: __address__
+          replacement: blackbox-exporter.example.com:9115
+        - source_labels: [__param_target]
+          target_label: instance
+        - action: labelmap
+          regex: __meta_kubernetes_ingress_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_ingress_name]
+          target_label: kubernetes_name
+
+    # Example scrape config for pods
+    #
+    # The relabeling allows the actual pod scrape endpoint to be configured via the
+    # following annotations:
+    #
+    # * `prometheus.io/scrape`: Only scrape pods that have a value of `true`
+    # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
+    # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the
+    # pod's declared ports (default is a port-free target if none are declared).
+    - job_name: 'kubernetes-pods'
+      scrape_interval: 30s
+
+      kubernetes_sd_configs:
+      - role: pod
+
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+      metric_relabel_configs:
+      - source_labels: [envoy_cluster_name]
+        regex: '(.+?)_(.+?)_(.*)'
+        action: replace
+        target_label: namespace
+        replacement: '$1'
+      - source_labels: [envoy_cluster_name]
+        regex: '(.+?)_(.+?)_(.*)'
+        action: replace
+        target_label: service
+        replacement: '$2'
+      - source_labels: [envoy_cluster_name]
+        regex: '(.+?)_(.+?)_(.*)'
+        action: replace
+        target_label: port
+        replacement: '$3'
+
+    alerting:
+      alertmanagers:
+      # Discover alert manager instances using K8s service discovery
+      - kubernetes_sd_configs:
+          - role: pod
+        scheme: http
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace]
+          regex: projectcontour-monitoring
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_label_app]
+          regex: prometheus
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_label_component]
+          regex: alertmanager
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_container_port_number]
+          regex:
+          action: drop
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: prometheus
+    component: alertmanager
+  namespace: projectcontour-monitoring
+  name: prometheus-alertmanager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: prometheus
+    component: alertmanager
+  name: prometheus-alertmanager
+  namespace: projectcontour-monitoring
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 9093
+  selector:
+    app: prometheus
+    component: alertmanager
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus
+    component: alertmanager
+  name: prometheus-alertmanager
+  namespace: projectcontour-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+      component: alertmanager
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        component: alertmanager
+    spec:
+      serviceAccountName: prometheus-alertmanager
+      containers:
+        - name: prometheus-alertmanager
+          image: prom/alertmanager:v0.13.0
+          imagePullPolicy: Always
+          args:
+            - --config.file=/etc/config/alertmanager.yml
+            - --storage.path=/data
+            - --web.external-url=/
+          ports:
+            - containerPort: 9093
+          readinessProbe:
+            httpGet:
+              path: /#/status
+              port: 9093
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+            - name: storage-volume
+              mountPath: /data
+        - name: prometheus-alertmanager-configmap-reload
+          image: jimmidyson/configmap-reload:v0.1
+          imagePullPolicy: Always
+          args:
+            - --volume-dir=/etc/config
+            - --webhook-url=http://localhost:9093/-/reload
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+              readOnly: true
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-alertmanager
+        - name: storage-volume
+          emptyDir: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: projectcontour-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: projectcontour-monitoring
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: 'true'
+  name: prometheus
+  namespace: projectcontour-monitoring
+spec:
+  ports:
+  - protocol: TCP
+    name: prometheus
+    port: 9090
+  selector:
+    app: prometheus
+    component: server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: projectcontour-monitoring
+  labels:
+    app: prometheus
+    component: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      component: server
+  template:
+    metadata:
+      name: prometheus
+      labels:
+        app: prometheus
+        component: server
+    spec:
+      serviceAccountName: prometheus
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.2.1
+        imagePullPolicy: Always
+        args:
+          - '--storage.tsdb.retention=24h'
+          - '--config.file=/etc/prometheus/prometheus.yml'
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+        - name: config-volume-alert-rules
+          mountPath: /etc/prometheus-rules
+        - name: cert-file
+          mountPath: /etc/ssl/etcd.pem
+        - name: key-file
+          mountPath: /etc/ssl/etcd-key.pem
+
+      # blackbox exporter
+      # - name: blackbox
+      #   image: quay.io/prometheus/blackbox-exporter:v0.11.0
+      #   args:
+      #     - --config.file=/config/blackbox.yml
+      #   ports:
+      #   - containerPort: 9115
+      #   volumeMounts:
+      #   - name: blackbox-config
+      #     mountPath: /config
+      # black box exporter
+      # - name: blackbox-config
+      #   configMap:
+      #     name: prometheus-blackbox
+
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prometheus
+      - name: cert-file
+        hostPath:
+          path: /etc/kubernetes/ssl/etcd.pem
+      - name: key-file
+        hostPath:
+          path: /etc/kubernetes/ssl/etcd-key.pem
+      - name: config-volume-alert-rules
+        configMap:
+          name: prometheus-alert-rules
+---
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: prometheus
+    component: node-exporter
+  name: prometheus-node-exporter
+  namespace: projectcontour-monitoring
+spec:
+  selector:
+    matchLabels:
+      app: prometheus
+      component: node-exporter
+  updateStrategy:
+    type: OnDelete
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        component: node-exporter
+    spec:
+      containers:
+        - name: prometheus-node-exporter
+          image: prom/node-exporter:v0.15.2
+          imagePullPolicy: Always
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+          ports:
+            - name: metrics
+              containerPort: 9100
+              hostPort: 9100
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+      hostNetwork: true
+      hostPID: true
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-node-exporter
+  namespace: projectcontour-monitoring
+  annotations:
+    prometheus.io/scrape: "true"
+  labels:
+    app: prometheus
+    component: node-exporter
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 9100
+      protocol: TCP
+      targetPort: 9100
+  selector:
+    app: prometheus
+    component: node-exporter
